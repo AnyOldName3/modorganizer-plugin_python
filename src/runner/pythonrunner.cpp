@@ -744,6 +744,20 @@ BOOST_PYTHON_MODULE(mobase)
 
   bpy::class_<PluginSetting>("PluginSetting", bpy::init<const QString&, const QString&, const QVariant&>());
 
+  bpy::class_<ExecutableInfo>("ExecutableInfo", bpy::init<const QString&, const QFileInfo&>())
+      .def("withArgument", &ExecutableInfo::withArgument)
+      .def("withWorkingDirectory", &ExecutableInfo::withWorkingDirectory)
+      .def("withSteamAppId", &ExecutableInfo::withSteamAppId)
+      .def("asCustom", &ExecutableInfo::asCustom)
+      .def("isValid", &ExecutableInfo::isValid)
+      .def("title", &ExecutableInfo::title)
+      .def("binary", &ExecutableInfo::binary)
+      .def("arguments", &ExecutableInfo::arguments)
+      .def("workingDirectory", &ExecutableInfo::workingDirectory)
+      .def("steamAppID", &ExecutableInfo::steamAppID)
+      .def("isCustom", &ExecutableInfo::isCustom)
+      ;
+
 
   bpy::class_<IOrganizerWrapper, boost::noncopyable>("IOrganizer")
       .def("createNexusBridge", bpy::pure_virtual(&IOrganizer::createNexusBridge), bpy::return_value_policy<bpy::reference_existing_object>())
