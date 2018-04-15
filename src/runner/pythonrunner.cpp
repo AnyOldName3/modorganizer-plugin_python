@@ -847,16 +847,6 @@ BOOST_PYTHON_MODULE(mobase)
       .def("variants", &MOBase::GuessedValue<QString>::variants, bpy::return_value_policy<bpy::copy_const_reference>())
       ;
 
-  bpy::class_<IPluginWrapper, boost::noncopyable>("IPlugin");
-
-  bpy::class_<IPluginToolWrapper, bpy::bases<IPlugin>, boost::noncopyable>("IPluginTool")
-      .def("setParentWidget", bpy::pure_virtual(&MOBase::IPluginTool::setParentWidget))
-      ;
-
-  bpy::class_<IPluginInstallerCustomWrapper, boost::noncopyable>("IPluginInstallerCustom")
-      .def("setParentWidget", bpy::pure_virtual(&MOBase::IPluginInstallerCustom::setParentWidget))
-      ;
-
   bpy::to_python_converter<IPluginList::PluginStates, QFlags_to_int<IPluginList::PluginState>>();
   QFlags_from_python_obj<IPluginList::PluginState>();
   Functor0_converter(); // converter for the onRefreshed-callback
@@ -889,6 +879,8 @@ BOOST_PYTHON_MODULE(mobase)
       .def("onModStateChanged", bpy::pure_virtual(&MOBase::IModList::onModStateChanged))
       .def("onModMoved", bpy::pure_virtual(&MOBase::IModList::onModMoved))
       ;
+
+  bpy::class_<IPluginWrapper, boost::noncopyable>("IPlugin");
 
   bpy::enum_<MOBase::IPluginGame::LoadOrderMechanism>("LoadOrderMechanism")
       .value("FileTime", MOBase::IPluginGame::LoadOrderMechanism::FileTime)
@@ -947,6 +939,15 @@ BOOST_PYTHON_MODULE(mobase)
 
       ;
 
+  bpy::class_<IPluginInstallerCustomWrapper, boost::noncopyable>("IPluginInstallerCustom")
+      .def("setParentWidget", bpy::pure_virtual(&MOBase::IPluginInstallerCustom::setParentWidget))
+      ;
+
+  bpy::class_<IPluginToolWrapper, bpy::bases<IPlugin>, boost::noncopyable>("IPluginTool")
+      .def("setParentWidget", bpy::pure_virtual(&MOBase::IPluginTool::setParentWidget))
+      ;
+
+  // TODO: determine if this is necessary (as PyQt should handle it)
     bpy::class_<QDir>("QDir")
       .def("absolutePath", &QDir::absolutePath)
     ;
@@ -1073,9 +1074,9 @@ QObject *PythonRunner::instantiate(const QString &pluginName)
     m_PythonObjects[pluginName] = moduleNamespace["createPlugin"]();
 
     bpy::object pluginObj = m_PythonObjects[pluginName];
+    TRY_PLUGIN_TYPE(IPluginGame, pluginObj);
     TRY_PLUGIN_TYPE(IPluginInstallerCustom, pluginObj);
     TRY_PLUGIN_TYPE(IPluginTool, pluginObj);
-    TRY_PLUGIN_TYPE(IPluginGame, pluginObj);
   } catch (const bpy::error_already_set&) {
     qWarning("failed to run python script \"%s\"", qPrintable(pluginName));
     reportPythonError();

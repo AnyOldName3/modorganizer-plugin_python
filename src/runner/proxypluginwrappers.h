@@ -26,31 +26,10 @@ public:
 };
 
 
-class IPluginToolWrapper: public MOBase::IPluginTool, public boost::python::wrapper<MOBase::IPluginTool>
-{
-  Q_OBJECT
-  Q_INTERFACES(MOBase::IPlugin MOBase::IPluginTool)
-
-public:
-  virtual bool init(MOBase::IOrganizer *moInfo);
-  virtual QString name() const;
-  virtual QString author() const;
-  virtual QString description() const;
-  virtual MOBase::VersionInfo version() const;
-  virtual bool isActive() const;
-  virtual QList<MOBase::PluginSetting> settings() const;
-
-  virtual QString displayName() const;
-  virtual QString tooltip() const;
-  virtual QIcon icon() const;
-  virtual void setParentWidget(QWidget *parent);
-
-public slots:
-  virtual void display() const;
-};
+// The wrapper for IPluginGame is defined in uibasewrappers.h
 
 
-class IPluginInstallerCustomWrapper: public MOBase::IPluginInstallerCustom, public boost::python::wrapper<MOBase::IPluginInstallerCustom>
+class IPluginInstallerCustomWrapper : public MOBase::IPluginInstallerCustom, public boost::python::wrapper<MOBase::IPluginInstallerCustom>
 {
   Q_OBJECT
   Q_INTERFACES(MOBase::IPlugin MOBase::IPluginInstaller MOBase::IPluginInstallerCustom)
@@ -73,6 +52,30 @@ public:
                                  const QString &version, int modID);
   virtual void setParentWidget(QWidget *parent);
 
+};
+
+
+class IPluginToolWrapper: public MOBase::IPluginTool, public boost::python::wrapper<MOBase::IPluginTool>
+{
+  Q_OBJECT
+  Q_INTERFACES(MOBase::IPlugin MOBase::IPluginTool)
+
+public:
+  virtual bool init(MOBase::IOrganizer *moInfo);
+  virtual QString name() const;
+  virtual QString author() const;
+  virtual QString description() const;
+  virtual MOBase::VersionInfo version() const;
+  virtual bool isActive() const;
+  virtual QList<MOBase::PluginSetting> settings() const;
+
+  virtual QString displayName() const;
+  virtual QString tooltip() const;
+  virtual QIcon icon() const;
+  virtual void setParentWidget(QWidget *parent);
+
+public slots:
+  virtual void display() const;
 };
 
 

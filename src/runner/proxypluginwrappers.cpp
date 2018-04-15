@@ -76,97 +76,6 @@ QList<MOBase::PluginSetting> IPluginWrapper::settings() const
   } PYCATCH;
 }
 /// end IPlugin Wrapper
-/////////////////////////////
-/// IPluginTool Wrapper
-
-
-bool IPluginToolWrapper::init(MOBase::IOrganizer *moInfo)
-{
-  try {
-    return this->get_override("init")(boost::python::ptr(moInfo));
-  } PYCATCH;
-}
-
-QString IPluginToolWrapper::name() const
-{
-  try {
-    return this->get_override("name")().as<QString>();
-  } PYCATCH;
-}
-
-QString IPluginToolWrapper::author() const
-{
-  try {
-    return this->get_override("author")().as<QString>();
-  } PYCATCH;
-}
-
-QString IPluginToolWrapper::description() const
-{
-  try {
-    return this->get_override("description")().as<QString>();
-  } PYCATCH;
-}
-
-MOBase::VersionInfo IPluginToolWrapper::version() const
-{
-  try {
-    return this->get_override("version")().as<MOBase::VersionInfo>();
-  } PYCATCH;
-}
-
-bool IPluginToolWrapper::isActive() const
-{
-  try {
-    return this->get_override("isActive")().as<bool>();
-  } PYCATCH;
-}
-
-QList<MOBase::PluginSetting> IPluginToolWrapper::settings() const
-{
-  try {
-    return this->get_override("settings")().as<QList<MOBase::PluginSetting>>();
-  } PYCATCH;
-}
-
-QString IPluginToolWrapper::displayName() const
-{
-  try {
-    return this->get_override("displayName")().as<QString>();
-  } PYCATCH;
-}
-
-QString IPluginToolWrapper::tooltip() const
-{
-  try {
-    return this->get_override("tooltip")().as<QString>();
-  } PYCATCH;
-}
-
-QIcon IPluginToolWrapper::icon() const
-{
-  try {
-    return this->get_override("icon")().as<QIcon>();
-  } PYCATCH;
-}
-
-void IPluginToolWrapper::setParentWidget(QWidget *parent)
-{
-  try {
-    this->get_override("setParentWidget")(parent);
-  } PYCATCH;
-}
-
-void IPluginToolWrapper::display() const
-{
-  try {
-    GILock lock;
-
-    this->get_override("display")();
-  } PYCATCH;
-}
-
-/// end IPluginTool Wrapper
 /////////////////////////////////////
 /// IPluginInstallerCustom Wrapper
 
@@ -272,5 +181,95 @@ void IPluginInstallerCustomWrapper::setParentWidget(QWidget *parent)
     this->get_override("setParentWidget")(parent);
   } PYCATCH;
 }
+/// end IPluginInstallerCustom Wrapper
+/////////////////////////////
+/// IPluginTool Wrapper
 
 
+bool IPluginToolWrapper::init(MOBase::IOrganizer *moInfo)
+{
+  try {
+    return this->get_override("init")(boost::python::ptr(moInfo));
+  } PYCATCH;
+}
+
+QString IPluginToolWrapper::name() const
+{
+  try {
+    return this->get_override("name")().as<QString>();
+  } PYCATCH;
+}
+
+QString IPluginToolWrapper::author() const
+{
+  try {
+    return this->get_override("author")().as<QString>();
+  } PYCATCH;
+}
+
+QString IPluginToolWrapper::description() const
+{
+  try {
+    return this->get_override("description")().as<QString>();
+  } PYCATCH;
+}
+
+MOBase::VersionInfo IPluginToolWrapper::version() const
+{
+  try {
+    return this->get_override("version")().as<MOBase::VersionInfo>();
+  } PYCATCH;
+}
+
+bool IPluginToolWrapper::isActive() const
+{
+  try {
+    return this->get_override("isActive")().as<bool>();
+  } PYCATCH;
+}
+
+QList<MOBase::PluginSetting> IPluginToolWrapper::settings() const
+{
+  try {
+    return this->get_override("settings")().as<QList<MOBase::PluginSetting>>();
+  } PYCATCH;
+}
+
+QString IPluginToolWrapper::displayName() const
+{
+  try {
+    return this->get_override("displayName")().as<QString>();
+  } PYCATCH;
+}
+
+QString IPluginToolWrapper::tooltip() const
+{
+  try {
+    return this->get_override("tooltip")().as<QString>();
+  } PYCATCH;
+}
+
+QIcon IPluginToolWrapper::icon() const
+{
+  try {
+    return this->get_override("icon")().as<QIcon>();
+  } PYCATCH;
+}
+
+void IPluginToolWrapper::setParentWidget(QWidget *parent)
+{
+  try {
+    this->get_override("setParentWidget")(parent);
+  } PYCATCH;
+}
+
+void IPluginToolWrapper::display() const
+{
+  try {
+    GILock lock;
+
+    this->get_override("display")();
+  } PYCATCH;
+}
+
+/// end IPluginTool Wrapper
