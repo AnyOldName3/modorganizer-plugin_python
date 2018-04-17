@@ -425,8 +425,10 @@ template <> struct MetaData<IDownloadManager> { static const char *className() {
 template <> struct MetaData<QObject> { static const char *className() { return "QObject"; } };
 template <> struct MetaData<QWidget> { static const char *className() { return "QWidget"; } };
 template <> struct MetaData<QIcon> { static const char *className() { return "QIcon"; } };
-template <> struct MetaData<QStringList> { static const char *className() { return "QStringList"; } };
+//template <> struct MetaData<QStringList> { static const char *className() { return "QStringList"; } };
 template <> struct MetaData<QVariant> { static const char *className() { return "QVariant"; } };
+template <> struct MetaData<QDir> { static const char *className() { return "QDir"; } };
+template <> struct MetaData<QFileInfo> { static const char *className() { return "QFileInfo"; } };
 
 
 template <typename T>
@@ -496,9 +498,10 @@ struct QClass_converters
 
   static void *QClass_from_PyQt(PyObject *objPtr)
   {
-    if (!PyObject_TypeCheck(objPtr, sipAPI()->api_wrapper_type)) {
-      PyErr_SetString(PyExc_TypeError, "type not wrapped");
-      bpy::throw_error_already_set();
+    if (!PyObject_TypeCheck(objPtr, sipAPI()->api_simplewrapper_type)) {
+      return nullptr;
+      //PyErr_SetString(PyExc_TypeError, "type not wrapped");
+      //bpy::throw_error_already_set();
     }
 
     sipAPI()->api_transfer_to(objPtr, 0);
@@ -687,9 +690,12 @@ BOOST_PYTHON_MODULE(mobase)
   QString_from_python_str();
 
   //QClass_converters<QObject>();
+  QClass_converters<QDir>();
+  QClass_converters<QFileInfo>();
   QClass_converters<QWidget>();
   QClass_converters<QIcon>();
-  QClass_converters<QStringList>();
+  // PyQt5 doesn't wrap QStringList as it doesn't wrap QStrings or QLists and they wanted to be consistent.
+  //QClass_converters<QStringList>();
   QInterface_converters<IDownloadManager>();
 
 
@@ -912,6 +918,8 @@ BOOST_PYTHON_MODULE(mobase)
   bpy::to_python_converter<IPluginGame::ProfileSettings, QFlags_to_int<IPluginGame::ProfileSetting>>();
   QFlags_from_python_obj<IPluginGame::ProfileSetting>();
 
+  QList_from_python_obj<ExecutableInfo>();
+
   bpy::class_<IPluginGameWrapper, boost::noncopyable>("IPluginGame")
       .def("gameName", bpy::pure_virtual(&MOBase::IPluginGame::gameName))
       .def("initializeProfile", bpy::pure_virtual(&MOBase::IPluginGame::initializeProfile))
@@ -950,7 +958,8 @@ BOOST_PYTHON_MODULE(mobase)
       .def("version", bpy::pure_virtual(&MOBase::IPluginGame::version))
       .def("isActive", bpy::pure_virtual(&MOBase::IPluginGame::isActive))
       .def("settings", bpy::pure_virtual(&MOBase::IPluginGame::settings))
-
+      
+      // this is where we'll .def("_featureList", ...) when I get around to it.
       ;
 
   bpy::class_<IPluginInstallerCustomWrapper, boost::noncopyable>("IPluginInstallerCustom")
@@ -962,9 +971,9 @@ BOOST_PYTHON_MODULE(mobase)
       ;
 
   // TODO: determine if this is necessary (as PyQt should handle it)
-    bpy::class_<QDir>("QDir")
+  /*  bpy::class_<QDir>("QDir")
       .def("absolutePath", &QDir::absolutePath)
-    ;
+    ;*/
 
   GuessedValue_converters<QString>();
 
@@ -973,6 +982,8 @@ BOOST_PYTHON_MODULE(mobase)
   QList_from_python_obj<PluginSetting>();
   bpy::to_python_converter<QList<ModRepositoryFileInfo>,
       QList_to_python_list<ModRepositoryFileInfo> >();
+
+  QList_from_python_obj<QString>();
 
   stdset_from_python_list<QString>();
 }

@@ -5,6 +5,7 @@
 #include <iplugintool.h>
 #include <iplugininstallersimple.h>
 #include <iplugininstallercustom.h>
+#include <iplugingame.h>
 
 #ifndef Q_MOC_RUN
 #include <boost/python.hpp>
@@ -79,6 +80,55 @@ public slots:
 };
 
 
+class IPluginGameWrapper: public MOBase::IPluginGame, public boost::python::wrapper<MOBase::IPluginGame> {
+  Q_OBJECT
+  Q_INTERFACES(MOBase::IPlugin MOBase::IPluginGame)
+public:
+  virtual QString gameName() const override { return this->get_override("gameName")(); }
+  virtual void initializeProfile(const QDir &directory, ProfileSettings settings) const override {
+    this->get_override("initializeProfile")(directory, settings);
+  }
+  virtual QString savegameExtension() const override { return this->get_override("savegameExtension")(); }
+  virtual QString savegameSEExtension() const override { return this->get_override("savegameSEExtension")(); }
+  virtual bool isInstalled() const override { return this->get_override("isInstalled")(); }
+  virtual QIcon gameIcon() const override { return this->get_override("gameIcon")(); }
+  virtual QDir gameDirectory() const override;
+  virtual QDir dataDirectory() const override { return this->get_override("dataDirectory")(); }
+  virtual void setGamePath(const QString &path) override { this->get_override("setGamePath")(path); }
+  virtual QDir documentsDirectory() const override { return this->get_override("documentsDirectory")(); }
+  virtual QDir savesDirectory() const override { return this->get_override("savesDirectory")(); }
+  virtual QList<MOBase::ExecutableInfo> executables() const override;
+  virtual QString steamAPPId() const override { return this->get_override("steamAPPId")(); }
+  virtual QStringList primaryPlugins() const override;
+  virtual QStringList gameVariants() const override;
+  virtual void setGameVariant(const QString &variant) override { this->get_override("setGameVariant")(variant); }
+  virtual QString binaryName() const override { return this->get_override("binaryName")(); }
+  virtual QString gameShortName() const override { return this->get_override("gameShortName")(); }
+  virtual QString gameNexusName() const override { return this->get_override("gameNexusName")(); }
+  virtual QStringList iniFiles() const override { return this->get_override("iniFiles")().as<QList<QString>>(); }
+  virtual QStringList DLCPlugins() const override { return this->get_override("DLCPlugins")().as<QList<QString>>(); }
+  virtual QStringList CCPlugins() const override { return this->get_override("CCPlugins")().as<QList<QString>>(); }
+  virtual LoadOrderMechanism loadOrderMechanism() const override { return this->get_override("loadorderMechanism")(); }
+  virtual int nexusModOrganizerID() const override { return this->get_override("nexusModOrganizerID")(); }
+  virtual int nexusGameID() const override { return this->get_override("nexusGameID")(); }
+  virtual bool looksValid(QDir const &dir) const override { return this->get_override("looksValid")(dir); }
+  virtual QString gameVersion() const override { return this->get_override("gameVersion")(); }
+  virtual QString getLauncherName() const override { return this->get_override("getLauncherName")(); }
 
+  //Plugin interface. Could this bit be implemented just once?
+  virtual bool init(MOBase::IOrganizer *moInfo) override;
+  virtual QString name() const override { return this->get_override("name")(); }
+  virtual QString author() const override { return this->get_override("author")(); }
+  virtual QString description() const override { return this->get_override("description")(); }
+  virtual MOBase::VersionInfo version() const override { return this->get_override("version")(); }
+  virtual bool isActive() const override { return this->get_override("isActive")(); }
+  virtual QList<MOBase::PluginSetting> settings() const override { return this->get_override("settings")(); }
+
+protected:
+
+  // Temp implementation to avoid crashes until I get around to makign a real one.
+  virtual std::map<std::type_index, boost::any> featureList() const override { return std::map<std::type_index, boost::any>(); }// this->get_override("_featureList")(); }
+
+};
 
 #endif // PROXYPLUGINWRAPPERS_H

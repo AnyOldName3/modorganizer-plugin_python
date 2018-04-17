@@ -273,3 +273,22 @@ void IPluginToolWrapper::display() const
 }
 
 /// end IPluginTool Wrapper
+
+
+QDir IPluginGameWrapper::gameDirectory() const
+{
+  try { return this->get_override("gameDirectory")().as<QDir>(); } PYCATCH
+}
+QList<MOBase::ExecutableInfo> IPluginGameWrapper::executables() const
+{
+  try { return this->get_override("executables")(); } PYCATCH
+}
+QStringList IPluginGameWrapper::primaryPlugins() const
+{
+  try { return this->get_override("primaryPlugins")().as<QList<QString>>(); } PYCATCH
+}
+QStringList IPluginGameWrapper::gameVariants() const
+{
+  try { return this->get_override("gameVariants")().as<QList<QString>>(); } PYCATCH
+}
+bool IPluginGameWrapper::init(MOBase::IOrganizer *moInfo) { try { return this->get_override("init")(boost::python::ptr(moInfo)); } PYCATCH }
