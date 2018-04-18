@@ -3,6 +3,7 @@
 
 
 #include <iplugintool.h>
+#include <iplugindiagnose.h>
 #include <iplugingame.h>
 #include <iplugininstallersimple.h>
 #include <iplugininstallercustom.h>
@@ -12,18 +13,42 @@
 #endif
 
 
+#define COMMON_I_PLUGIN_WRAPPER_DECLARATIONS public: \
+virtual bool init(MOBase::IOrganizer *moInfo) override; \
+virtual QString name() const override; \
+virtual QString author() const override; \
+virtual QString description() const override; \
+virtual MOBase::VersionInfo version() const override; \
+virtual bool isActive() const override; \
+virtual QList<MOBase::PluginSetting> settings() const override;
+
+
 class IPluginWrapper : public MOBase::IPlugin, public boost::python::wrapper<MOBase::IPlugin>
 {
   Q_INTERFACES(MOBase::IPlugin)
 
+  COMMON_I_PLUGIN_WRAPPER_DECLARATIONS
+};
+
+
+// Even though the base interface is not an IPlugin or QObject, this has to be because we have no way to pass Mod Organizer a plugin that implements multiple interfaces.
+// QObject must be the first base class because moc assumes the first base class is a QObject
+class IPluginDiagnoseWrapper : public QObject, public MOBase::IPluginDiagnose, public MOBase::IPlugin, public boost::python::wrapper<MOBase::IPluginDiagnose>
+{
+  Q_OBJECT
+  Q_INTERFACES(MOBase::IPlugin MOBase::IPluginDiagnose)
+
 public:
-  virtual bool init(MOBase::IOrganizer *moInfo);
-  virtual QString name() const;
-  virtual QString author() const;
-  virtual QString description() const;
-  virtual MOBase::VersionInfo version() const;
-  virtual bool isActive() const;
-  virtual QList<MOBase::PluginSetting> settings() const;
+  virtual std::vector<unsigned int> activeProblems() const override;
+  virtual QString shortDescription(unsigned int key) const override;
+  virtual QString fullDescription(unsigned int key) const override;
+  virtual bool hasGuidedFix(unsigned int key) const override;
+  virtual void startGuidedFix(unsigned int key) const override;
+  // Other functions exist, but shouldn't need wrapping as a default implementation exists
+  // This was protected, but Python doesn't have that, so it needs making public
+  virtual void invalidate();
+
+  COMMON_I_PLUGIN_WRAPPER_DECLARATIONS
 };
 
 
@@ -63,14 +88,7 @@ public:
   virtual QString gameVersion() const override;
   virtual QString getLauncherName() const override;
 
-  //Plugin interface. Could this bit be implemented just once?
-  virtual bool init(MOBase::IOrganizer *moInfo) override;
-  virtual QString name() const override;
-  virtual QString author() const override;
-  virtual QString description() const override;
-  virtual MOBase::VersionInfo version() const override;
-  virtual bool isActive() const override;
-  virtual QList<MOBase::PluginSetting> settings() const override;
+  COMMON_I_PLUGIN_WRAPPER_DECLARATIONS
 
 protected:
 
@@ -86,15 +104,9 @@ class IPluginInstallerCustomWrapper : public MOBase::IPluginInstallerCustom, pub
   Q_OBJECT
   Q_INTERFACES(MOBase::IPlugin MOBase::IPluginInstaller MOBase::IPluginInstallerCustom)
 
-public:
-  virtual bool init(MOBase::IOrganizer *moInfo);
-  virtual QString name() const;
-  virtual QString author() const;
-  virtual QString description() const;
-  virtual MOBase::VersionInfo version() const;
-  virtual bool isActive() const;
-  virtual QList<MOBase::PluginSetting> settings() const;
+  COMMON_I_PLUGIN_WRAPPER_DECLARATIONS
 
+public:
   virtual unsigned int priority() const;
   virtual bool isManualInstaller() const;
   virtual bool isArchiveSupported(const MOBase::DirectoryTree &tree) const;
@@ -112,15 +124,9 @@ class IPluginToolWrapper: public MOBase::IPluginTool, public boost::python::wrap
   Q_OBJECT
   Q_INTERFACES(MOBase::IPlugin MOBase::IPluginTool)
 
-public:
-  virtual bool init(MOBase::IOrganizer *moInfo);
-  virtual QString name() const;
-  virtual QString author() const;
-  virtual QString description() const;
-  virtual MOBase::VersionInfo version() const;
-  virtual bool isActive() const;
-  virtual QList<MOBase::PluginSetting> settings() const;
+  COMMON_I_PLUGIN_WRAPPER_DECLARATIONS
 
+public:
   virtual QString displayName() const;
   virtual QString tooltip() const;
   virtual QIcon icon() const;

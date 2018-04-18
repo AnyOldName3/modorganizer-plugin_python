@@ -340,6 +340,35 @@ struct QList_from_python_obj
 
 
 template <typename T>
+struct std_vector_from_python_obj
+{
+  std_vector_from_python_obj() {
+    bpy::converter::registry::push_back(
+      &convertible,
+      &construct,
+      bpy::type_id<std::vector<T> >());
+  }
+
+  static void* convertible(PyObject *objPtr) {
+    if (PyList_Check(objPtr)) return objPtr;
+    return nullptr;
+  }
+
+  static void construct(PyObject *objPtr, bpy::converter::rvalue_from_python_stage1_data *data) {
+    void *storage = ((bpy::converter::rvalue_from_python_storage<std::vector<T> >*)data)->storage.bytes;
+    std::vector<T> *result = new (storage) std::vector<T>();
+    bpy::list source(bpy::handle<>(bpy::borrowed(objPtr)));
+    int length = bpy::len(source);
+    for (int i = 0; i < length; ++i) {
+      result->push_back(bpy::extract<T>(source[i]));
+    }
+
+    data->convertible = storage;
+  }
+};
+
+
+template <typename T>
 struct QFlags_from_python_obj
 {
   QFlags_from_python_obj() {
@@ -601,6 +630,7 @@ int getArgCount(PyObject *object) {
   return result;
 }
 
+template <typename RET>
 struct Functor0_converter
 {
 
@@ -609,9 +639,9 @@ struct Functor0_converter
     FunctorWrapper(boost::python::object callable) : m_Callable(callable) {
     }
 
-    void operator()() {
+    RET operator()() {
       GILock lock;
-      m_Callable();
+      return (RET) m_Callable();
     }
 
     boost::python::object m_Callable;
@@ -619,7 +649,7 @@ struct Functor0_converter
 
   Functor0_converter()
   {
-    bpy::converter::registry::push_back(&convertible, &construct, bpy::type_id<std::function<void()>>());
+    bpy::converter::registry::push_back(&convertible, &construct, bpy::type_id<std::function<RET()>>());
   }
 
   static void *convertible(PyObject *object)
@@ -634,14 +664,55 @@ struct Functor0_converter
   static void construct(PyObject *object, bpy::converter::rvalue_from_python_stage1_data *data)
   {
     bpy::object callable(bpy::handle<>(bpy::borrowed(object)));
-    void *storage = ((bpy::converter::rvalue_from_python_storage<std::function<void()>>*)data)->storage.bytes;
-    new (storage) std::function<void()>(FunctorWrapper(callable));
+    void *storage = ((bpy::converter::rvalue_from_python_storage<std::function<RET()>>*)data)->storage.bytes;
+    new (storage) std::function<RET()>(FunctorWrapper(callable));
     data->convertible = storage;
   }
 };
 
 
-template <typename PAR1, typename PAR2>
+template <typename RET, typename PAR1>
+struct Functor1_converter
+{
+
+  struct FunctorWrapper
+  {
+    FunctorWrapper(boost::python::object callable) : m_Callable(callable) {
+    }
+
+    RET operator()(const PAR1 &param1) {
+      GILock lock;
+      return (RET) m_Callable(param1);
+    }
+
+    boost::python::object m_Callable;
+  };
+
+  Functor1_converter()
+  {
+    bpy::converter::registry::push_back(&convertible, &construct, bpy::type_id<std::function<RET(PAR1)>>());
+  }
+
+  static void *convertible(PyObject *object)
+  {
+    if (!PyCallable_Check(object)
+      || (getArgCount(object) != 1)) {
+      return nullptr;
+    }
+    return object;
+  }
+
+  static void construct(PyObject *object, bpy::converter::rvalue_from_python_stage1_data *data)
+  {
+    bpy::object callable(bpy::handle<>(bpy::borrowed(object)));
+    void *storage = ((bpy::converter::rvalue_from_python_storage<std::function<RET(PAR1)>>*)data)->storage.bytes;
+    new (storage) std::function<RET(PAR1)>(FunctorWrapper(callable));
+    data->convertible = storage;
+  }
+};
+
+
+template <typename RET, typename PAR1, typename PAR2>
 struct Functor2_converter
 {
 
@@ -650,9 +721,9 @@ struct Functor2_converter
     FunctorWrapper(boost::python::object callable) : m_Callable(callable) {
     }
 
-    void operator()(const PAR1 &param1, const PAR2 &param2) {
+    RET operator()(const PAR1 &param1, const PAR2 &param2) {
       GILock lock;
-      m_Callable(param1, param2);
+      return (RET) m_Callable(param1, param2);
     }
 
     boost::python::object m_Callable;
@@ -660,7 +731,7 @@ struct Functor2_converter
 
   Functor2_converter()
   {
-    bpy::converter::registry::push_back(&convertible, &construct, bpy::type_id<std::function<void(PAR1, PAR2)>>());
+    bpy::converter::registry::push_back(&convertible, &construct, bpy::type_id<std::function<RET(PAR1, PAR2)>>());
   }
 
   static void *convertible(PyObject *object)
@@ -675,8 +746,8 @@ struct Functor2_converter
   static void construct(PyObject *object, bpy::converter::rvalue_from_python_stage1_data *data)
   {
     bpy::object callable(bpy::handle<>(bpy::borrowed(object)));
-    void *storage = ((bpy::converter::rvalue_from_python_storage<std::function<void(PAR1, PAR2)>>*)data)->storage.bytes;
-    new (storage) std::function<void(PAR1, PAR2)>(FunctorWrapper(callable));
+    void *storage = ((bpy::converter::rvalue_from_python_storage<std::function<RET(PAR1, PAR2)>>*)data)->storage.bytes;
+    new (storage) std::function<RET(PAR1, PAR2)>(FunctorWrapper(callable));
     data->convertible = storage;
   }
 };
@@ -760,12 +831,18 @@ BOOST_PYTHON_MODULE(mobase)
       .def("isCustom", &ExecutableInfo::isCustom)
       ;
 
+  Functor1_converter<bool, const IOrganizer::FileInfo&>();
+  Functor1_converter<void, const QString&>();
+  Functor1_converter<bool, const QString&>();
+  Functor2_converter<void, const QString&, unsigned int>();
 
   bpy::class_<IOrganizerWrapper, boost::noncopyable>("IOrganizer")
       .def("createNexusBridge", bpy::pure_virtual(&IOrganizer::createNexusBridge), bpy::return_value_policy<bpy::reference_existing_object>())
       .def("profileName", bpy::pure_virtual(&IOrganizer::profileName))
       .def("profilePath", bpy::pure_virtual(&IOrganizer::profilePath))
       .def("downloadsPath", bpy::pure_virtual(&IOrganizer::downloadsPath))
+      .def("overwritePath", bpy::pure_virtual(&IOrganizer::overwritePath))
+      .def("basePath", bpy::pure_virtual(&IOrganizer::basePath))
       .def("appVersion", bpy::pure_virtual(&IOrganizer::appVersion))
       .def("getMod", bpy::pure_virtual(&IOrganizer::getMod), bpy::return_value_policy<bpy::reference_existing_object>())
       .def("createMod", bpy::pure_virtual(&IOrganizer::createMod), bpy::return_value_policy<bpy::reference_existing_object>())
@@ -777,16 +854,21 @@ BOOST_PYTHON_MODULE(mobase)
       .def("setPersistent", bpy::pure_virtual(&IOrganizer::setPersistent))
       .def("pluginDataPath", bpy::pure_virtual(&IOrganizer::pluginDataPath))
       .def("installMod", bpy::pure_virtual(&IOrganizer::installMod),(bpy::arg("nameSuggestion")=""), bpy::return_value_policy<bpy::reference_existing_object>())
+      .def("resolvePath", bpy::pure_virtual(&IOrganizer::resolvePath))
+      .def("listDirectories", bpy::pure_virtual(&IOrganizer::listDirectories))
+      .def("findFiles", bpy::pure_virtual(&IOrganizer::findFiles))
+      .def("getFileOrigins", bpy::pure_virtual(&IOrganizer::getFileOrigins))
+      .def("findFileInfos", bpy::pure_virtual(&IOrganizer::findFileInfos))
       .def("downloadManager", bpy::pure_virtual(&IOrganizer::downloadManager), bpy::return_value_policy<bpy::reference_existing_object>())
       .def("pluginList", bpy::pure_virtual(&IOrganizer::pluginList), bpy::return_value_policy<bpy::reference_existing_object>())
       .def("modList", bpy::pure_virtual(&IOrganizer::modList), bpy::return_value_policy<bpy::reference_existing_object>())
-      .def("startApplication", bpy::pure_virtual(&IOrganizer::startApplication), bpy::return_value_policy<bpy::return_by_value>())
+      .def("profile", bpy::pure_virtual(&IOrganizer::profile), bpy::return_value_policy<bpy::reference_existing_object>())
+      .def("startApplication", bpy::pure_virtual(&IOrganizer::startApplication), ((bpy::arg("args")=QStringList()), (bpy::arg("cwd")=""), (bpy::arg("profile")="")), bpy::return_value_policy<bpy::return_by_value>())
       //.def("waitForApplication", bpy::pure_virtual(&IOrganizer::waitForApplication), (bpy::arg("exitCode")=nullptr), bpy::return_value_policy<bpy::return_by_value>())
+      .def("onModInstalled", bpy::pure_virtual(&IOrganizer::onModInstalled))
       .def("onAboutToRun", bpy::pure_virtual(&IOrganizer::onAboutToRun))
       .def("onFinishedRun", bpy::pure_virtual(&IOrganizer::onFinishedRun))
-      .def("onModInstalled", bpy::pure_virtual(&IOrganizer::onModInstalled))
-      .def("refreshModList", bpy::pure_virtual(&IOrganizer::refreshModList))
-      .def("profile", bpy::pure_virtual(&IOrganizer::profile), bpy::return_value_policy<bpy::reference_existing_object>())
+      .def("refreshModList", bpy::pure_virtual(&IOrganizer::refreshModList), (bpy::arg("saveChanges")=true))
       .def("managedGame", bpy::pure_virtual(&IOrganizer::managedGame), bpy::return_value_policy<bpy::reference_existing_object>())
       .def("modsSortedByProfilePriority", bpy::pure_virtual(&IOrganizer::modsSortedByProfilePriority))
       ;
@@ -865,7 +947,7 @@ BOOST_PYTHON_MODULE(mobase)
 
   bpy::to_python_converter<IPluginList::PluginStates, QFlags_to_int<IPluginList::PluginState>>();
   QFlags_from_python_obj<IPluginList::PluginState>();
-  Functor0_converter(); // converter for the onRefreshed-callback
+  Functor0_converter<void>(); // converter for the onRefreshed-callback
 
   bpy::class_<IPluginListWrapper, boost::noncopyable>("IPluginList")
       .def("state", bpy::pure_virtual(&MOBase::IPluginList::state))
@@ -883,7 +965,7 @@ BOOST_PYTHON_MODULE(mobase)
 
   bpy::to_python_converter<IModList::ModStates, QFlags_to_int<IModList::ModState>>();
   QFlags_from_python_obj<IModList::ModState>();
-  Functor2_converter<const QString&, IModList::ModStates>(); // converter for the onModStateChanged-callback
+  Functor2_converter<void, const QString&, IModList::ModStates>(); // converter for the onModStateChanged-callback
 
   bpy::class_<IModListWrapper, boost::noncopyable>("IModList")
       .def("displayName", bpy::pure_virtual(&MOBase::IModList::displayName))
@@ -897,6 +979,15 @@ BOOST_PYTHON_MODULE(mobase)
       ;
 
   bpy::class_<IPluginWrapper, boost::noncopyable>("IPlugin");
+
+  bpy::class_<IPluginDiagnoseWrapper, boost::noncopyable>("IPluginDiagnose")
+      .def("activeProblems", bpy::pure_virtual(&MOBase::IPluginDiagnose::activeProblems))
+      .def("shortDescription", bpy::pure_virtual(&MOBase::IPluginDiagnose::shortDescription))
+      .def("fullDescription", bpy::pure_virtual(&MOBase::IPluginDiagnose::fullDescription))
+      .def("hasGuidedFix", bpy::pure_virtual(&MOBase::IPluginDiagnose::hasGuidedFix))
+      .def("startGuidedFix", bpy::pure_virtual(&MOBase::IPluginDiagnose::startGuidedFix))
+      .def("_invalidate", &IPluginDiagnoseWrapper::invalidate)
+      ;
 
   bpy::enum_<MOBase::IPluginGame::LoadOrderMechanism>("LoadOrderMechanism")
       .value("FileTime", MOBase::IPluginGame::LoadOrderMechanism::FileTime)
@@ -991,6 +1082,8 @@ BOOST_PYTHON_MODULE(mobase)
   QList_from_python_obj<QString>();
   bpy::to_python_converter<QList<QFileInfo>,
       QList_to_python_list<QFileInfo>>();
+
+  std_vector_from_python_obj<unsigned int>();
 
   stdset_from_python_list<QString>();
 }
@@ -1107,6 +1200,8 @@ QObject *PythonRunner::instantiate(const QString &pluginName)
 
     bpy::object pluginObj = m_PythonObjects[pluginName];
     TRY_PLUGIN_TYPE(IPluginGame, pluginObj);
+    // Must try the wrapper because it's a plugin extension interface in C++
+    TRY_PLUGIN_TYPE(IPluginDiagnoseWrapper, pluginObj);
     TRY_PLUGIN_TYPE(IPluginInstallerCustom, pluginObj);
     TRY_PLUGIN_TYPE(IPluginTool, pluginObj);
   } catch (const bpy::error_already_set&) {
